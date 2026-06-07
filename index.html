@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Assistente Lis">
+<title>Lis — Assistente Pessoal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0e0c0a;--surface:#161310;--card:#1c1814;--card2:#211e19;
+  --gold:#c9a84c;--gold2:#e8c97a;--cream:#f5efe3;--muted:#7a7060;
+  --green:#4a7c59;--wa:#25d366;--red:#c0392b;
+  --border:rgba(201,168,76,0.15);--shadow:0 8px 40px rgba(0,0,0,0.6);
+  --nav-h:68px;--top-h:60px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:300;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(201,168,76,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--top-h);
+  background:rgba(14,12,10,0.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;z-index:50;
+  padding-top:env(safe-area-inset-top);
+}
+.topbar-logo{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold2);letter-spacing:3px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-time{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);letter-spacing:1px;}
+.topbar-date{font-size:10px;color:var(--muted);letter-spacing:.5px;text-align:right;}
+.ai-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,124,89,0.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(74,124,89,0)}}
+
+/* ── MAIN SCROLL AREA ── */
+.main{
+  position:fixed;
+  top:var(--top-h);
+  left:0;right:0;
+  bottom:var(--nav-h);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:20px 16px 20px;
+  z-index:1;
+}
+
+/* ── PAGES ── */
+.page{display:none;animation:fadeIn .25s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── BOTTOM NAV ── */
+.bottomnav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nav-h);
+  background:rgba(14,12,10,0.97);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:50;
+}
+.nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 14px;border-radius:12px;cursor:pointer;
+  color:var(--muted);font-size:9px;letter-spacing:.5px;
+  text-transform:uppercase;transition:all .2s;flex:1;
+  position:relative;
+}
+.nav-btn.active{color:var(--gold2);}
+.nav-btn-icon{font-size:22px;line-height:1;}
+.nav-badge{
+  position:absolute;top:4px;right:14px;
+  background:var(--gold);color:var(--bg);
+  font-size:9px;font-weight:600;
+  min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;
+}
+
+/* ── PAGE TITLE ── */
+.page-title{
+  font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;
+  color:var(--cream);margin-bottom:20px;line-height:1.1;
+}
+.page-title span{color:var(--gold);font-style:italic;}
+
+/* ── DASHBOARD ── */
+.greet-block{margin-bottom:20px;}
+.greet-name{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--cream);}
+.greet-name span{color:var(--gold);font-style:italic;}
+.greet-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+.stats-row{display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;}
+.stats-row::-webkit-scrollbar{display:none;}
+.stat-chip{
+  flex-shrink:0;padding:8px 14px;background:var(--card);
+  border:1px solid var(--border);border-radius:20px;
+  font-size:11px;color:var(--muted);white-space:nowrap;
+}
+.stat-chip strong{color:var(--gold2);}
+
+.cards-col{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;}
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all .15s;active:opacity:.8;
+}
+.card:active{opacity:.8;transform:scale(.99);}
+.card-icon{font-size:28px;flex-shrink:0;}
+.card-body{flex:1;}
+.card-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.card-value{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold2);line-height:1;}
+.card-detail{font-size:11px;color:var(--muted);margin-top:3px;}
+.card-arrow{color:var(--muted);font-size:18px;}
+
+/* ── SECTION TITLE ── */
+.section-title{
+  font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--cream);
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── AI QUICK ── */
+.ai-box{
+  background:linear-gradient(135deg,rgba(201,168,76,0.07),rgba(139,69,19,0.05));
+  border:1px solid var(--border);border-radius:16px;padding:18px;
+}
+.ai-box-title{font-size:11px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.ai-textarea{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:10px;padding:12px;color:var(--cream);
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  resize:none;min-height:80px;outline:none;
+  -webkit-appearance:none;
+}
+.ai-textarea:focus{border-color:rgba(201,168,76,0.4);}
+.ai-result{
+  margin-top:12px;padding:14px;background:rgba(0,0,0,0.25);
+  border-radius:10px;font-size:13px;line-height:1.7;
+  color:rgba(245,239,227,0.85);display:none;white-space:pre-wrap;
+}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:11px 18px;border-radius:12px;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;
+  transition:all .15s;display:inline-flex;align-items:center;gap:6px;
+  -webkit-appearance:none;
+}
+.btn:active{opacity:.8;transform:scale(.98);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#a07830);color:var(--bg);font-weight:500;}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--muted);}
+.btn-outline:active{border-color:var(--gold);color:var(--gold);}
+.btn-green{background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.25);color:var(--wa);}
+.btn-gmail{background:rgba(234,67,53,0.15);border:1px solid rgba(234,67,53,0.3);color:#ea4335;}
+.btn-sm{padding:8px 14px;font-size:12px;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+
+/* ── LOADING ── */
+.loading{display:none;align-items:center;gap:8px;color:var(--muted);font-size:12px;}
+.loading.show{display:flex;}
+.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── WEEK STRIP ── */
+.week-strip{display:flex;gap:8px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px;}
+.week-strip::-webkit-scrollbar{display:none;}
+.day-pill{
+  flex-shrink:0;min-width:46px;padding:10px 6px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;text-align:center;cursor:pointer;
+  transition:all .15s;position:relative;
+}
+.day-pill.active{background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(139,69,19,0.12));border-color:var(--gold);}
+.day-pill.today::after{content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold);}
+.day-name{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.day-num{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--cream);margin-top:1px;}
+
+/* ── EVENTS ── */
+.event-list{display:flex;flex-direction:column;gap:10px;}
+.event-item{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);
+  border-radius:14px;
+}
+.event-time{font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--gold);min-width:44px;padding-top:1px;}
+.event-bar{width:3px;border-radius:2px;min-height:36px;flex-shrink:0;}
+.event-content{flex:1;}
+.event-title{font-size:13px;color:var(--cream);}
+.event-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.event-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;margin-top:5px;}
+.tag-work{background:rgba(201,168,76,0.12);color:var(--gold);}
+.tag-health{background:rgba(74,124,89,0.15);color:#6ab87a;}
+.tag-finance{background:rgba(192,57,43,0.1);color:#e88;}
+.tag-personal{background:rgba(139,69,19,0.15);color:#d4956a;}
+
+/* ── FORM ── */
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.form-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.form-input{
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px;color:var(--cream);
+  font-family:'DM Sans',sans-serif;font-size:14px;outline:none;
+  -webkit-appearance:none;width:100%;
+}
+.form-input:focus{border-color:rgba(201,168,76,0.4);}
+select.form-input{color:var(--cream);}
+
+/* ── REMINDERS ── */
+.reminder-list{display:flex;flex-direction:column;gap:10px;}
+.reminder-item{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;
+}
+.reminder-check{
+  width:22px;height:22px;border:1.5px solid var(--border);border-radius:7px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:12px;transition:all .2s;
+}
+.reminder-check.done{background:var(--green);border-color:var(--green);}
+.reminder-text{flex:1;font-size:13px;}
+.reminder-text.done{text-decoration:line-through;color:var(--muted);}
+.reminder-when{font-size:11px;color:var(--gold);margin-top:2px;}
+.reminder-priority{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.p-red{background:#c0392b;}.p-orange{background:#e67e22;}.p-gold{background:var(--gold);}.p-green{background:var(--green);}
+
+/* ── EMAILS ── */
+.email-item{
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;margin-bottom:8px;transition:all .15s;
+}
+.email-item:active{opacity:.8;}
+.email-from-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+.email-from{font-size:13px;color:var(--cream);}
+.email-time{font-size:10px;color:var(--muted);}
+.email-subject{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.email-snippet{font-size:11px;color:var(--muted);margin-top:2px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* EMAIL VIEW */
+.email-view-back{display:flex;align-items:center;gap:8px;color:var(--gold);font-size:13px;margin-bottom:16px;cursor:pointer;padding:4px 0;}
+.email-view-subject{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--cream);margin-bottom:10px;line-height:1.2;}
+.email-view-meta{font-size:11px;color:var(--muted);margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.email-view-body{font-size:13px;line-height:1.8;color:rgba(245,239,227,0.8);white-space:pre-wrap;}
+
+/* ── GMAIL BANNER ── */
+.gmail-banner{
+  border-radius:14px;padding:16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,rgba(234,67,53,0.1),rgba(201,168,76,0.06));
+  border:1px solid rgba(234,67,53,0.2);
+}
+.gmail-banner.connected{background:linear-gradient(135deg,rgba(74,124,89,0.1),rgba(201,168,76,0.06));border-color:rgba(74,124,89,0.25);}
+.gmail-banner-info{flex:1;}
+.gmail-banner-title{font-size:13px;color:var(--cream);margin-bottom:2px;}
+.gmail-banner-sub{font-size:11px;color:var(--muted);}
+
+/* ── VITTAJOB ── */
+.vittajob-card{
+  background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(139,69,19,0.05));
+  border:1px solid var(--border);border-radius:14px;
+  padding:16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+
+/* ── WA ── */
+.wa-contact{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+}
+.wa-contact:active,.wa-contact.active{border-color:rgba(37,211,102,0.3);}
+.wa-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:rgba(37,211,102,0.1);}
+.wa-info{flex:1;min-width:0;}
+.wa-name{font-size:13px;color:var(--cream);}
+.wa-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wa-time{font-size:10px;color:var(--muted);flex-shrink:0;}
+
+/* WA CHAT */
+.wa-chat-header{display:flex;align-items:center;gap:12px;padding:12px 0;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.wa-chat-back{color:var(--gold);font-size:20px;cursor:pointer;padding:4px 8px 4px 0;}
+.wa-chat-name{font-size:14px;color:var(--cream);}
+.wa-chat-status{font-size:11px;color:var(--green);}
+.wa-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;min-height:200px;}
+.msg{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;}
+.msg.received{background:var(--card2);color:var(--cream);align-self:flex-start;border-bottom-left-radius:4px;}
+.msg.sent{background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(139,69,19,0.15));color:var(--cream);align-self:flex-end;border-bottom-right-radius:4px;border:1px solid rgba(201,168,76,0.2);}
+.msg-time{font-size:10px;color:var(--muted);margin-top:4px;text-align:right;}
+.wa-input-row{display:flex;gap:8px;align-items:flex-end;}
+.wa-input{
+  flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px;color:var(--cream);
+  font-family:'DM Sans',sans-serif;font-size:14px;outline:none;
+  -webkit-appearance:none;resize:none;min-height:44px;
+}
+.wa-input:focus{border-color:rgba(37,211,102,0.3);}
+
+/* ── MINI CAL ── */
+.mini-cal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-top:20px;}
+.mini-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.mini-cal-month{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold2);}
+.cal-nav{background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{text-align:center;padding:7px 2px;font-size:12px;border-radius:8px;cursor:pointer;color:var(--muted);}
+.cal-cell.today{background:var(--gold);color:var(--bg);font-weight:600;}
+.cal-cell.has-event{position:relative;}
+.cal-cell.has-event::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--gold);}
+.cal-cell.dow{color:var(--muted);font-size:10px;letter-spacing:1px;cursor:default;}
+
+/* ── SUMMARY ── */
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+.summary-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(201,168,76,0.1);border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:16px;right:16px;background:var(--card2);border:1px solid var(--border);padding:12px 16px;border-radius:12px;font-size:13px;color:var(--cream);z-index:200;transform:translateY(20px);opacity:0;transition:all .3s;box-shadow:var(--shadow);text-align:center;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ── DASHBOARD RELATÓRIO ── */
+.dash-header-card{
+  background:linear-gradient(135deg,rgba(192,57,43,0.12),rgba(201,168,76,0.08));
+  border:1px solid rgba(192,57,43,0.25);border-radius:16px;
+  padding:18px;margin-bottom:20px;
+}
+.dash-kpi-row{display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;}
+.dash-kpi-row::-webkit-scrollbar{display:none;}
+.kpi-card{
+  flex-shrink:0;min-width:90px;padding:14px 12px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;text-align:center;
+}
+.kpi-val{font-family:"Cormorant Garamond",serif;font-size:28px;line-height:1;}
+.kpi-label{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-top:4px;text-transform:uppercase;}
+.atencao-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-bottom:10px;
+}
+.atencao-card.alta{border-left:3px solid #c0392b;}
+.atencao-card.media{border-left:3px solid #e67e22;}
+.atencao-card.baixa{border-left:3px solid var(--green);}
+.atencao-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.atencao-setor{font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;}
+.atencao-tarefa{font-size:13px;color:var(--cream);font-weight:400;margin-top:2px;}
+.atencao-ponto{font-size:12px;color:rgba(245,239,227,0.7);margin-bottom:8px;line-height:1.5;}
+.atencao-footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.atencao-tag{font-size:10px;padding:3px 8px;border-radius:6px;letter-spacing:.3px;}
+.tag-alta{background:rgba(192,57,43,0.15);color:#e88;}
+.tag-media{background:rgba(230,126,34,0.15);color:#f0a070;}
+.tag-baixa{background:rgba(74,124,89,0.15);color:#6ab87a;}
+.atencao-prazo{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+.atencao-resp{font-size:10px;color:var(--muted);margin-left:auto;}
+.filter-row{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .15s;}
+.filter-btn.active{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.dot-alta{background:#c0392b;}
+.dot-media{background:#e67e22;}
+.dot-baixa{background:var(--green);}
+.progress-bar{height:4px;border-radius:2px;background:var(--border);margin-top:8px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),#e8c97a);transition:width .5s;}
+
+/* ── ANÁLISE ── */
+.analysis-opt{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;transition:all .15s;
+}
+.analysis-opt:active,.analysis-opt.active{border-color:var(--gold);background:rgba(201,168,76,0.08);}
+.opt-check{color:var(--gold);font-size:16px;flex-shrink:0;}
+
+/* ── WA CONFIG ── */
+.wa-config-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">LIS</div>
+  <div class="topbar-right">
+    <div>
+      <div class="topbar-time" id="topTime"></div>
+      <div class="topbar-date" id="topDate"></div>
+    </div>
+    <div class="ai-dot"></div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainScroll">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="greet-block">
+      <div class="greet-name">Olá, <span>Lis</span> ✦</div>
+      <div class="greet-sub" id="greetSub">Carregando resumo do dia...</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-chip">📅 <strong>3</strong> hoje</div>
+      <div class="stat-chip">✉️ <strong id="dashEmailCount">—</strong> e-mails</div>
+      <div class="stat-chip">🔔 <strong id="dashLembCount">4</strong> lembretes</div>
+      <div class="stat-chip">💬 <strong>3</strong> msgs</div>
+    </div>
+
+    <div class="section-title">Hoje</div>
+    <div class="cards-col">
+      <div class="card" onclick="navTo('agenda')">
+        <div class="card-icon">📅</div>
+        <div class="card-body">
+          <div class="card-label">Próximo evento</div>
+          <div class="card-value">10:00</div>
+          <div class="card-detail">Reunião de marketing</div>
+        </div>
+        <div class="card-arrow">›</div>
+      </div>
+      <div class="card" onclick="navTo('emails')">
+        <div class="card-icon">✉️</div>
+        <div class="card-body">
+          <div class="card-label">Gmail não lidos</div>
+          <div class="card-value" id="dashEmailVal">—</div>
+          <div class="card-detail" id="dashEmailDetail">Conecte o Gmail</div>
+        </div>
+        <div class="card-arrow">›</div>
+      </div>
+      <div class="card" onclick="navTo('lembretes')">
+        <div class="card-icon">🔔</div>
+        <div class="card-body">
+          <div class="card-label">Lembretes pendentes</div>
+          <div class="card-value" id="dashLembVal">4</div>
+          <div class="card-detail">1 urgente</div>
+        </div>
+        <div class="card-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="section-title">IA Rápida</div>
+    <div class="ai-box">
+      <div class="ai-box-title">✦ O que posso fazer por você?</div>
+      <textarea class="ai-textarea" id="quickPrompt" placeholder="Ex: Rascunhe um e-mail para adiar a reunião de amanhã..." rows="3"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="runQuickAI()">✦ Gerar</button>
+        <button class="btn btn-outline" onclick="document.getElementById('quickPrompt').value=''">Limpar</button>
+        <div class="loading" id="quickLoading"><div class="spinner"></div></div>
+      </div>
+      <div class="ai-result" id="quickResult"></div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="page" id="page-agenda">
+    <div class="page-title">Agenda <span>Semanal</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn btn-gold btn-sm" onclick="fetchGoogleCalendar()">📅 Sincronizar Google Calendar</button>
+      <button class="btn btn-outline btn-sm" onclick="requestNotificationPermission()">🔔 Ativar Notificações</button>
+    </div>
+    <div class="week-strip" id="weekStrip"></div>
+    <div class="event-list" id="eventList"></div>
+
+    <div style="margin-top:24px;">
+      <div class="section-title">Adicionar</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;">
+        <div class="form-group">
+          <label class="form-label">Título</label>
+          <input class="form-input" id="newEventTitle" placeholder="Nome do evento">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" class="form-input" id="newEventDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horário</label>
+            <input type="time" class="form-input" id="newEventTime">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Local</label>
+          <input class="form-input" id="newEventLocal" placeholder="Local ou link">
+        </div>
+        <button class="btn btn-gold" onclick="addEvent()" style="width:100%;">+ Adicionar Compromisso</button>
+      </div>
+    </div>
+
+    <div class="mini-cal">
+      <div class="mini-cal-header">
+        <button class="cal-nav" onclick="prevMonth()">‹</button>
+        <div class="mini-cal-month" id="calMonth"></div>
+        <button class="cal-nav" onclick="nextMonth()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <!-- LEMBRETES -->
+  <div class="page" id="page-lembretes">
+    <div class="page-title">Lembretes & <span>Tarefas</span></div>
+
+    <!-- Botões de ação -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="requestNotificationPermission()">🔔 Ativar Notificações</button>
+      <button class="btn btn-outline btn-sm" onclick="syncRemindersToCalendar()">📅 Enviar ao Calendar</button>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:20px;">
+      <div class="form-group">
+        <label class="form-label">Novo lembrete</label>
+        <input class="form-input" id="newReminderText" placeholder="Digite o lembrete...">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label class="form-label">Data/hora</label>
+          <input type="datetime-local" class="form-input" id="newReminderDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prioridade</label>
+          <select class="form-input" id="newReminderPriority">
+            <option value="red">🔴 Urgente</option>
+            <option value="orange">🟠 Alta</option>
+            <option value="gold" selected>🟡 Média</option>
+            <option value="green">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recorrência</label>
+        <select class="form-input" id="newReminderRecurrence">
+          <option value="none">Sem repetição</option>
+          <option value="daily">🔁 Diário</option>
+          <option value="weekly">🔁 Semanal</option>
+          <option value="monthly">🔁 Mensal</option>
+        </select>
+      </div>
+      <button class="btn btn-gold" onclick="addReminder()" style="width:100%;">+ Adicionar Lembrete</button>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">
+      <button class="btn btn-sm" id="fAll" onclick="filterReminders('all')" style="background:var(--gold);color:var(--bg);flex-shrink:0;">Todos</button>
+      <button class="btn btn-outline btn-sm" id="fPending" onclick="filterReminders('pending')" style="flex-shrink:0;">Pendentes</button>
+      <button class="btn btn-outline btn-sm" id="fUrgent" onclick="filterReminders('urgent')" style="flex-shrink:0;">🔴 Urgentes</button>
+      <button class="btn btn-outline btn-sm" id="fDone" onclick="filterReminders('done')" style="flex-shrink:0;">✓ Concluídos</button>
+    </div>
+
+    <div class="reminder-list" id="reminderList"></div>
+  </div>
+
+  <!-- EMAILS -->
+  <div class="page" id="page-emails">
+    <div id="emailListView">
+      <div class="page-title">E-mails <span>Lis</span></div>
+
+      <!-- Vittajob -->
+      <div class="vittajob-card">
+        <span style="font-size:24px;">🏢</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;color:var(--cream);margin-bottom:2px;">E-mail Corporativo — Vittajob</div>
+          <div style="font-size:11px;color:var(--muted);">webmail.vittajob.com.br</div>
+        </div>
+        <a href="https://webmail.vittajob.com.br/carbonio/mails/folder/2" target="_blank" class="btn btn-gold btn-sm">📬 Abrir</a>
+      </div>
+
+      <!-- Gmail Banner -->
+      <div class="gmail-banner" id="gmailBanner">
+        <span style="font-size:24px;">📧</span>
+        <div class="gmail-banner-info">
+          <div class="gmail-banner-title">Gmail</div>
+          <div class="gmail-banner-sub" id="gmailBannerSub">Toque para conectar</div>
+        </div>
+        <button class="btn btn-gmail btn-sm" id="gmailConnectBtn" onclick="gmailLogin()">Conectar</button>
+      </div>
+
+      <div class="btn-row" style="margin-bottom:16px;">
+        <button class="btn btn-gold btn-sm" onclick="showComposeView()">✉️ Novo E-mail</button>
+        <button class="btn btn-outline btn-sm" onclick="fetchGmailInbox()" id="btnRefresh" style="display:none;">🔄 Atualizar</button>
+        <button class="btn btn-outline btn-sm" onclick="gmailLogout()" id="btnLogout" style="display:none;">Sair</button>
+      </div>
+
+      <div id="emailList">
+        <div style="text-align:center;color:var(--muted);padding:40px 0;font-size:13px;">Conecte o Gmail para ver seus e-mails</div>
+      </div>
+    </div>
+
+    <!-- EMAIL DETAIL VIEW -->
+    <div id="emailDetailView" style="display:none;">
+      <div class="email-view-back" onclick="showEmailList()">‹ Voltar</div>
+      <div class="email-view-subject" id="evSubject"></div>
+      <div class="email-view-meta" id="evMeta"></div>
+      <div class="email-view-body" id="evBody"></div>
+      <div class="btn-row" style="margin-top:20px;">
+        <button class="btn btn-gold btn-sm" id="evReplyBtn">↩ Responder com IA</button>
+        <button class="btn btn-outline btn-sm" onclick="showEmailList()">Fechar</button>
+      </div>
+    </div>
+
+    <!-- COMPOSE VIEW -->
+    <div id="composeView" style="display:none;">
+      <div class="email-view-back" onclick="showEmailList()">‹ Voltar</div>
+      <div class="page-title" style="font-size:22px;">Novo <span>E-mail</span></div>
+      <div class="form-group"><label class="form-label">Para</label><input class="form-input" id="emailTo" placeholder="destinatario@email.com"></div>
+      <div class="form-group"><label class="form-label">Assunto</label><input class="form-input" id="emailSubject" placeholder="Assunto"></div>
+      <div class="form-group"><label class="form-label">Instruções para a IA</label><textarea class="ai-textarea" id="emailPrompt" placeholder="Descreva o que quer dizer..." rows="4"></textarea></div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="generateEmail()">✦ Gerar Rascunho</button>
+        <button class="btn btn-gmail" id="sendGmailBtn" style="display:none;" onclick="sendGmailReal()">📤 Enviar</button>
+        <div class="loading" id="emailLoading"><div class="spinner"></div></div>
+      </div>
+      <div class="ai-result" id="emailResult"></div>
+    </div>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="page" id="page-resumo">
+    <div class="page-title">Resumo do <span>Dia</span></div>
+    <div class="summary-card">
+      <div class="summary-badge">✦ IA</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--cream);margin-bottom:14px;">Briefing — <span id="resumoDate" style="color:var(--gold);"></span></div>
+      <div id="resumoContent" style="font-size:13px;line-height:1.85;color:rgba(245,239,227,0.8);">
+        <p>Toque em "Gerar Resumo" para criar seu briefing personalizado.</p>
+      </div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-gold" onclick="generateDailySummary()">✦ Gerar Resumo</button>
+        <div class="loading" id="resumoLoading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANÁLISE DE RELATÓRIOS -->
+  <div class="page" id="page-analise">
+    <div class="page-title">Análise de <span>Relatórios</span></div>
+
+    <!-- UPLOAD AREA -->
+    <div id="uploadArea" onclick="document.getElementById('fileInput').click()"
+      style="border:2px dashed var(--border);border-radius:20px;padding:36px 20px;text-align:center;cursor:pointer;margin-bottom:20px;transition:all .2s;background:rgba(201,168,76,0.03);"
+      ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+      ondragleave="this.style.borderColor='var(--border)'"
+      ondrop="handleDrop(event)">
+      <div style="font-size:44px;margin-bottom:12px;">📄</div>
+      <div style="font-size:15px;color:var(--cream);margin-bottom:6px;">Toque para enviar arquivo</div>
+      <div style="font-size:12px;color:var(--muted);">PDF, Word, Excel, TXT, imagens</div>
+      <input type="file" id="fileInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg" onchange="handleFileSelect(event)">
+    </div>
+
+    <!-- ARQUIVO SELECIONADO -->
+    <div id="fileSelected" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="fileIcon" style="font-size:32px;">📄</div>
+        <div style="flex:1;min-width:0;">
+          <div id="fileName" style="font-size:13px;color:var(--cream);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          <div id="fileSize" style="font-size:11px;color:var(--muted);margin-top:2px;"></div>
+        </div>
+        <span onclick="clearFile()" style="color:var(--muted);font-size:20px;cursor:pointer;padding:4px;">✕</span>
+      </div>
+    </div>
+
+    <!-- TIPO DE ANÁLISE -->
+    <div id="analysisOptions" style="display:none;">
+      <div class="section-title">Tipo de Análise</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div class="analysis-opt active" id="opt-resumo" onclick="selectAnalysis('resumo')">
+          <span style="font-size:20px;">📋</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--cream);">Resumo Executivo</div>
+            <div style="font-size:11px;color:var(--muted);">Pontos principais em linguagem clara</div>
+          </div>
+          <span class="opt-check">✓</span>
+        </div>
+        <div class="analysis-opt" id="opt-financeiro" onclick="selectAnalysis('financeiro')">
+          <span style="font-size:20px;">💰</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--cream);">Análise Financeira</div>
+            <div style="font-size:11px;color:var(--muted);">Números, tendências e alertas</div>
+          </div>
+          <span class="opt-check" style="opacity:0;">✓</span>
+        </div>
+        <div class="analysis-opt" id="opt-riscos" onclick="selectAnalysis('riscos')">
+          <span style="font-size:20px;">⚠️</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--cream);">Riscos & Oportunidades</div>
+            <div style="font-size:11px;color:var(--muted);">Identifica pontos de atenção</div>
+          </div>
+          <span class="opt-check" style="opacity:0;">✓</span>
+        </div>
+        <div class="analysis-opt" id="opt-acoes" onclick="selectAnalysis('acoes')">
+          <span style="font-size:20px;">✅</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--cream);">Plano de Ações</div>
+            <div style="font-size:11px;color:var(--muted);">Próximos passos recomendados</div>
+          </div>
+          <span class="opt-check" style="opacity:0;">✓</span>
+        </div>
+        <div class="analysis-opt" id="opt-completo" onclick="selectAnalysis('completo')">
+          <span style="font-size:20px;">🔍</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--cream);">Análise Completa</div>
+            <div style="font-size:11px;color:var(--muted);">Tudo acima combinado</div>
+          </div>
+          <span class="opt-check" style="opacity:0;">✓</span>
+        </div>
+      </div>
+
+      <!-- INSTRUÇÃO EXTRA -->
+      <div class="form-group">
+        <label class="form-label">Instrução adicional (opcional)</label>
+        <textarea class="ai-textarea" id="analysisExtra" placeholder="Ex: Foque nos dados de vendas do Q2, compare com metas..." rows="2"></textarea>
+      </div>
+
+      <button class="btn btn-gold" id="analyzeBtn" onclick="analyzeFile()" style="width:100%;padding:14px;font-size:14px;" disabled>✦ Analisar com IA</button>
+      <div class="loading" id="analysisLoading" style="justify-content:center;margin-top:12px;"><div class="spinner"></div> Analisando documento...</div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="analysisResult" style="display:none;margin-top:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="section-title" style="margin-bottom:0;">Resultado da Análise</div>
+        <button class="btn btn-outline btn-sm" onclick="copyAnalysis()">📋 Copiar</button>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;">
+        <div class="summary-badge" id="resultBadge">✦ IA</div>
+        <div id="resultFileName" style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);margin-bottom:14px;"></div>
+        <div id="resultContent" style="font-size:13px;line-height:1.85;color:rgba(245,239,227,0.85);white-space:pre-wrap;"></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-gold btn-sm" onclick="emailAnalysis()">✉️ Enviar por E-mail</button>
+        <button class="btn btn-outline btn-sm" onclick="clearAnalysis()">🔄 Nova Análise</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD RELATÓRIOS -->
+  <div class="page" id="page-dashboard-rel">
+    <div class="page-title">Pontos de <span>Atenção</span></div>
+
+    <!-- Header card -->
+    <div class="dash-header-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:22px;">⚠️</span>
+        <div>
+          <div style="font-size:13px;color:var(--cream);font-weight:400;">Relatório de Atividades</div>
+          <div style="font-size:11px;color:var(--muted);">Consolidado até 15/06/2026</div>
+        </div>
+        <button class="btn btn-gold btn-sm" style="margin-left:auto;" onclick="generateDashAI()">✦ Analisar com IA</button>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:35%;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;">35% das frentes concluídas</div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="dash-kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:#c0392b;">4</div>
+        <div class="kpi-label">Urgentes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:#e67e22;">2</div>
+        <div class="kpi-label">Médias</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--green);">3</div>
+        <div class="kpi-label">Concluídas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--gold);">7</div>
+        <div class="kpi-label">Andamento</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--muted);">3</div>
+        <div class="kpi-label">Planejadas</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filterDash(this,'todos')">Todos</button>
+      <button class="filter-btn" onclick="filterDash(this,'alta')">🔴 Alta</button>
+      <button class="filter-btn" onclick="filterDash(this,'media')">🟠 Média</button>
+      <button class="filter-btn" onclick="filterDash(this,'tributario')">💰 Tributário</button>
+      <button class="filter-btn" onclick="filterDash(this,'contabilidade')">📋 Contabilidade</button>
+      <button class="filter-btn" onclick="filterDash(this,'financeiro')">📊 Financeiro</button>
+    </div>
+
+    <!-- Cards de atenção -->
+    <div id="dashCards"></div>
+
+    <!-- Resultado IA -->
+    <div id="dashAIResult" style="display:none;margin-top:16px;">
+      <div class="section-title">✦ Análise da IA</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;">
+        <div class="loading show" id="dashAILoading" style="justify-content:center;padding:20px 0;"><div class="spinner"></div> Analisando pontos críticos...</div>
+        <div id="dashAIContent" style="font-size:13px;line-height:1.85;color:rgba(245,239,227,0.85);white-space:pre-wrap;display:none;"></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-outline btn-sm" onclick="copyDashAI()">📋 Copiar</button>
+        <button class="btn btn-gold btn-sm" onclick="emailDashAI()">✉️ Enviar por E-mail</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP -->
+  <div class="page" id="page-whatsapp">
+    <!-- CONTACT LIST -->
+    <div id="waListView">
+      <div class="page-title">WhatsApp <span>Business</span></div>
+      <div class="wa-config-card">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Configuração API</div>
+        <div class="form-group"><label class="form-label">Phone Number ID</label><input class="form-input" id="waPhoneId" placeholder="123456789"></div>
+        <div class="form-group"><label class="form-label">Access Token</label><input class="form-input" id="waToken" type="password" placeholder="EAAxxxxxxx..."></div>
+        <div class="form-group"><label class="form-label">Número destino (teste)</label><input class="form-input" id="waTestTo" placeholder="+5598xxxxxxxxx"></div>
+        <button class="btn btn-green btn-sm" onclick="saveWAConfig()" style="width:100%;">💾 Salvar</button>
+      </div>
+      <div class="section-title">Conversas</div>
+      <div id="waContacts"></div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div id="waChatView" style="display:none;">
+      <div class="wa-chat-header">
+        <div class="wa-chat-back" onclick="showWAList()">‹</div>
+        <div class="wa-avatar" id="waChatAvatar">💬</div>
+        <div style="flex:1;">
+          <div class="wa-chat-name" id="waChatName"></div>
+          <div class="wa-chat-status" id="waChatStatus"></div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="suggestWAReply()">✦ IA</button>
+      </div>
+      <div class="wa-messages" id="waMessages"></div>
+      <div class="ai-box" id="waSuggest" style="display:none;margin-bottom:12px;">
+        <div class="ai-box-title">✦ Sugestão da IA</div>
+        <div class="ai-result" id="waSuggestResult" style="display:block;margin-top:0;"></div>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-sm" onclick="useWASuggestion()">Usar</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('waSuggest').style.display='none'">Fechar</button>
+        </div>
+      </div>
+      <div class="wa-input-row">
+        <textarea class="wa-input" id="waInput" placeholder="Digite uma mensagem..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="btn btn-green btn-sm" onclick="sendWA()" style="flex-shrink:0;align-self:flex-end;">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottomnav">
+  <div class="nav-btn active" id="nav-dashboard" onclick="navTo('dashboard')">
+    <div class="nav-btn-icon">✦</div>
+    <div>Painel</div>
+  </div>
+  <div class="nav-btn" id="nav-agenda" onclick="navTo('agenda')">
+    <div class="nav-btn-icon">📅</div>
+    <div>Agenda</div>
+  </div>
+  <div class="nav-btn" id="nav-lembretes" onclick="navTo('lembretes')">
+    <div class="nav-btn-icon">🔔</div>
+    <div>Lembretes</div>
+    <div class="nav-badge" id="badgeLembretes">4</div>
+  </div>
+  <div class="nav-btn" id="nav-emails" onclick="navTo('emails')">
+    <div class="nav-btn-icon">✉️</div>
+    <div>E-mails</div>
+    <div class="nav-badge" id="gmailNavBadge" style="display:none;"></div>
+  </div>
+  <div class="nav-btn" id="nav-resumo" onclick="navTo('resumo')">
+    <div class="nav-btn-icon">📋</div>
+    <div>Resumo</div>
+  </div>
+  <div class="nav-btn" id="nav-analise" onclick="navTo('analise')">
+    <div class="nav-btn-icon">📊</div>
+    <div>Análise</div>
+  </div>
+  <div class="nav-btn" id="nav-dashboard-rel" onclick="navTo('dashboard-rel')">
+    <div class="nav-btn-icon">🎯</div>
+    <div>Atenção</div>
+    <div class="nav-badge" id="badgeDash" style="background:#c0392b;">6</div>
+  </div>
+  <div class="nav-btn" id="nav-whatsapp" onclick="navTo('whatsapp')">
+    <div class="nav-btn-icon">💬</div>
+    <div>WhatsApp</div>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════
+const CONFIG = {
+  GMAIL_CLIENT_ID: '398511287212-1o6hudj81f5jisqukkeh0hl0661nu9nq.apps.googleusercontent.com',
+  GMAIL_REDIRECT_URI: 'https://gleaming-torrone-0bcea7.netlify.app',
+  GMAIL_SCOPES: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
+};
+
+// ═══════════════════════════════════
+// DADOS
+// ═══════════════════════════════════
+const _today = new Date();
+const _todayStr = _today.getFullYear()+'-'+String(_today.getMonth()+1).padStart(2,'0')+'-'+String(_today.getDate()).padStart(2,'0');
+
+const events = [];
+let reminders = [
+  {id:1,text:'Aprovar relatório da equipe',when:'Hoje, 12:00',priority:'red',done:false},
+  {id:2,text:'Ligar para o contador',when:'Hoje, 15:00',priority:'orange',done:false},
+  {id:3,text:'Confirmar evento de sexta',when:'Amanhã, 09:00',priority:'gold',done:false},
+  {id:4,text:'Renovar seguro do escritório',when:'Sexta, 17:00',priority:'green',done:false},
+];
+const waContactsData = [
+  {id:1,name:'João Silva (Sócio)',avatar:'👔',time:'10:23',status:'online',msgs:[
+    {text:'Lis, bom dia! Você viu o contrato que mandei?',from:'received',time:'10:20'},
+    {text:'Precisamos falar sobre o contrato da fornecedora ainda hoje',from:'received',time:'10:23'},
+  ]},
+  {id:2,name:'Fernanda (Secretária)',avatar:'📋',time:'09:45',status:'online',msgs:[
+    {text:'Bom dia Lis! Sua agenda de amanhã está confirmada ✓',from:'received',time:'09:40'},
+    {text:'O Sr. Roberto confirmou para as 11h',from:'received',time:'09:45'},
+  ]},
+  {id:3,name:'Família 👨‍👩‍👧',avatar:'🏠',time:'Ontem',status:'',msgs:[
+    {text:'Não esqueça do almoço de domingo! 😊',from:'received',time:'Ontem'},
+    {text:'Vou tentar! Depende da reunião de sábado',from:'sent',time:'Ontem'},
+  ]},
+];
+let activeContact=null, waConfig={phoneId:'',token:'',testTo:''};
+let gmailToken=null, gmailUser=null, gmailMessages=[], currentEmailIdx=null;
+let selectedDay=_todayStr;
+
+// ═══════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════
+const DAYS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MONTHS_SHORT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MONTHS_LONG=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('topTime').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('topDate').textContent=DAYS[n.getDay()]+', '+n.getDate()+' '+MONTHS_SHORT[n.getMonth()];
+  document.getElementById('greetSub').textContent='Hoje é '+DAYS[n.getDay()]+', '+n.getDate()+' de '+MONTHS_LONG[n.getMonth()];
+  document.getElementById('resumoDate').textContent=n.getDate()+'/'+(n.getMonth()+1).toString().padStart(2,'0')+'/'+n.getFullYear();
+}
+setInterval(updateClock,1000); updateClock();
+
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
+function navTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  document.getElementById('mainScroll').scrollTop=0;
+  if(page==='emails'){showEmailList();}
+  if(page==='whatsapp'){showWAList();}
+}
+
+// ═══════════════════════════════════
+// AGENDA
+// ═══════════════════════════════════
+const days7=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function buildWeekStrip(){
+  const strip=document.getElementById('weekStrip'); strip.innerHTML='';
+  const base=new Date(_today); base.setDate(_today.getDate()-_today.getDay());
+  for(let i=0;i<7;i++){
+    const d=new Date(base); d.setDate(base.getDate()+i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const div=document.createElement('div');
+    div.className='day-pill'+(ds===selectedDay?' active':'')+(ds===_todayStr?' today':'');
+    div.innerHTML='<div class="day-name">'+days7[d.getDay()]+'</div><div class="day-num">'+d.getDate()+'</div>';
+    div.onclick=()=>{selectedDay=ds;buildWeekStrip();renderEvents();};
+    strip.appendChild(div);
+  }
+}
+
+function renderEvents(){
+  const list=document.getElementById('eventList');
+  const filtered=events.filter(e=>e.date===selectedDay);
+  const tags={work:'Trabalho',health:'Saúde',finance:'Financeiro',personal:'Pessoal'};
+  list.innerHTML=filtered.length?filtered.map(e=>`
+    <div class="event-item">
+      <div class="event-time">${e.time}</div>
+      <div class="event-bar" style="background:${e.color};"></div>
+      <div class="event-content">
+        <div class="event-title">${e.title}</div>
+        <div class="event-meta">📍 ${e.local}</div>
+        <span class="event-tag tag-${e.tag}">${tags[e.tag]||e.tag}</span>
+      </div>
+      <span onclick="deleteEvent(${e.id})" style="color:var(--muted);font-size:18px;padding:4px;cursor:pointer;">✕</span>
+    </div>
+  `).join(''):'<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px;">Sem eventos neste dia</div>';
+}
+
+function addEvent(){
+  const t=document.getElementById('newEventTitle').value.trim();
+  const d=document.getElementById('newEventDate').value;
+  const h=document.getElementById('newEventTime').value;
+  const l=document.getElementById('newEventLocal').value;
+  if(!t||!d||!h){showToast('⚠️ Preencha título, data e horário');return;}
+  events.push({id:Date.now(),title:t,date:d,time:h,local:l||'—',tag:'work',color:'#c9a84c'});
+  document.getElementById('newEventTitle').value='';document.getElementById('newEventLocal').value='';
+  buildWeekStrip();renderEvents();buildMiniCal();showToast('✅ Compromisso adicionado!');
+}
+function deleteEvent(id){events.splice(events.findIndex(e=>e.id===id),1);renderEvents();showToast('🗑️ Removido');}
+
+// ═══════════════════════════════════
+// MINI CAL
+// ═══════════════════════════════════
+let calDate=new Date(_today.getFullYear(),_today.getMonth(),1);
+function buildMiniCal(){
+  document.getElementById('calMonth').textContent=MONTHS_LONG[calDate.getMonth()]+' '+calDate.getFullYear();
+  const grid=document.getElementById('calGrid'); grid.innerHTML='';
+  ['D','S','T','Q','Q','S','S'].forEach(d=>{const c=document.createElement('div');c.className='cal-cell dow';c.textContent=d;grid.appendChild(c);});
+  const first=new Date(calDate.getFullYear(),calDate.getMonth(),1);
+  const last=new Date(calDate.getFullYear(),calDate.getMonth()+1,0);
+  for(let i=0;i<first.getDay();i++){const c=document.createElement('div');c.className='cal-cell';grid.appendChild(c);}
+  for(let d=1;d<=last.getDate();d++){
+    const c=document.createElement('div');
+    const ds=calDate.getFullYear()+'-'+String(calDate.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    c.className='cal-cell'+(ds===_todayStr?' today':'')+(events.some(e=>e.date===ds)?' has-event':'');
+    c.textContent=d;
+    c.onclick=()=>{selectedDay=ds;buildWeekStrip();renderEvents();navTo('agenda');};
+    grid.appendChild(c);
+  }
+}
+function prevMonth(){calDate.setMonth(calDate.getMonth()-1);buildMiniCal();}
+function nextMonth(){calDate.setMonth(calDate.getMonth()+1);buildMiniCal();}
+
+// ═══════════════════════════════════
+// LEMBRETES
+// ═══════════════════════════════════
+let reminderFilter='all';
+
+function filterReminders(f){
+  reminderFilter=f;
+  ['All','Pending','Urgent','Done'].forEach(x=>{
+    const el=document.getElementById('f'+x);
+    if(el){el.style.background='none';el.style.color='var(--muted)';el.className='btn btn-outline btn-sm';}
+  });
+  const active=document.getElementById('f'+f.charAt(0).toUpperCase()+f.slice(1));
+  if(active){active.style.background='var(--gold)';active.style.color='var(--bg)';active.className='btn btn-sm';}
+  renderReminders();
+}
+
+function renderReminders(){
+  let filtered=reminders;
+  if(reminderFilter==='pending') filtered=reminders.filter(r=>!r.done);
+  if(reminderFilter==='urgent') filtered=reminders.filter(r=>r.priority==='red'&&!r.done);
+  if(reminderFilter==='done') filtered=reminders.filter(r=>r.done);
+
+  const recLabel={none:'',daily:'🔁 Diário',weekly:'🔁 Semanal',monthly:'🔁 Mensal'};
+  document.getElementById('reminderList').innerHTML=filtered.length?filtered.map(r=>`
+    <div class="reminder-item">
+      <div class="reminder-priority p-${r.priority}"></div>
+      <div class="reminder-check ${r.done?'done':''}" onclick="toggleReminder(${r.id})">${r.done?'✓':''}</div>
+      <div style="flex:1;">
+        <div class="reminder-text ${r.done?'done':''}">${r.text}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;">
+          <div class="reminder-when">${r.when}</div>
+          ${r.recurrence&&r.recurrence!=='none'?'<span style="font-size:10px;color:var(--green);">'+recLabel[r.recurrence]+'</span>':''}
+          ${r.inCalendar?'<span style="font-size:10px;color:#4285f4;">📅 No Calendar</span>':''}
+        </div>
+      </div>
+      <span onclick="deleteReminder(${r.id})" style="color:var(--muted);font-size:18px;padding:4px;cursor:pointer;">✕</span>
+    </div>
+  `).join(''):'<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px;">Nenhum lembrete aqui</div>';
+
+  const n=reminders.filter(r=>!r.done).length;
+  document.getElementById('badgeLembretes').textContent=n;
+  document.getElementById('dashLembVal').textContent=n;
+  document.getElementById('dashLembCount').textContent=n;
+}
+
+function toggleReminder(id){
+  const r=reminders.find(r=>r.id===id);
+  if(!r)return;
+  r.done=!r.done;
+  // Se recorrente e marcado como feito, cria próxima ocorrência
+  if(r.done&&r.recurrence&&r.recurrence!=='none'&&r.dateRaw){
+    const next=new Date(r.dateRaw);
+    if(r.recurrence==='daily') next.setDate(next.getDate()+1);
+    if(r.recurrence==='weekly') next.setDate(next.getDate()+7);
+    if(r.recurrence==='monthly') next.setMonth(next.getMonth()+1);
+    reminders.unshift({
+      id:Date.now(),text:r.text,
+      when:next.toLocaleString('pt-BR'),
+      dateRaw:next.toISOString(),
+      priority:r.priority,recurrence:r.recurrence,done:false
+    });
+    showToast('🔁 Próxima ocorrência criada!');
+  }
+  renderReminders();
+}
+
+function deleteReminder(id){reminders=reminders.filter(r=>r.id!==id);renderReminders();showToast('🗑️ Removido');}
+
+function addReminder(){
+  const t=document.getElementById('newReminderText').value.trim();
+  const d=document.getElementById('newReminderDate').value;
+  const p=document.getElementById('newReminderPriority').value;
+  const rec=document.getElementById('newReminderRecurrence').value;
+  if(!t){showToast('⚠️ Digite o lembrete');return;}
+  const dateRaw=d?new Date(d).toISOString():null;
+  reminders.unshift({id:Date.now(),text:t,when:d?new Date(d).toLocaleString('pt-BR'):'Sem data',dateRaw,priority:p,recurrence:rec,done:false});
+  document.getElementById('newReminderText').value='';
+  renderReminders();
+  showToast('🔔 Lembrete adicionado!');
+  // Agendar notificação
+  if(d) scheduleReminderNotification(t,new Date(d));
+}
+
+function scheduleReminderNotification(text, date){
+  if(!('Notification' in window))return;
+  Notification.requestPermission().then(perm=>{
+    if(perm!=='granted')return;
+    const now=new Date();
+    const diff=date.getTime()-now.getTime();
+    if(diff>0&&diff<7*24*60*60*1000){
+      // Notificação na hora
+      setTimeout(()=>{new Notification('🔔 Assistente Lis',{body:text});},diff);
+      // Notificação 15 min antes
+      const diff15=diff-15*60*1000;
+      if(diff15>0) setTimeout(()=>{new Notification('⏰ Assistente Lis',{body:'Em 15 min: '+text});},diff15);
+    }
+  });
+}
+
+async function syncRemindersToCalendar(){
+  if(!gmailToken){showToast('⚠️ Conecte o Gmail primeiro');return;}
+  const pending=reminders.filter(r=>!r.done&&r.dateRaw&&!r.inCalendar);
+  if(!pending.length){showToast('⚠️ Nenhum lembrete com data para enviar');return;}
+  let count=0;
+  for(const r of pending){
+    try{
+      const start=new Date(r.dateRaw);
+      const end=new Date(start.getTime()+30*60*1000);
+      const body={summary:'🔔 '+r.text,description:'Lembrete criado pela Assistente Lis',start:{dateTime:start.toISOString()},end:{dateTime:end.toISOString()},reminders:{useDefault:false,overrides:[{method:'popup',minutes:15}]}};
+      if(r.recurrence&&r.recurrence!=='none'){
+        const rrule={daily:'RRULE:FREQ=DAILY',weekly:'RRULE:FREQ=WEEKLY',monthly:'RRULE:FREQ=MONTHLY'};
+        body.recurrence=[rrule[r.recurrence]];
+      }
+      const res=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{method:'POST',headers:{Authorization:'Bearer '+gmailToken,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(res.ok){r.inCalendar=true;count++;}
+    }catch(e){}
+  }
+  renderReminders();
+  showToast(count>0?'📅 '+count+' lembrete(s) enviados ao Calendar!':'❌ Erro ao enviar ao Calendar');
+}
+
+// ═══════════════════════════════════
+// GMAIL
+// ═══════════════════════════════════
+function gmailLogin(){
+  const p=new URLSearchParams({client_id:CONFIG.GMAIL_CLIENT_ID,redirect_uri:CONFIG.GMAIL_REDIRECT_URI,response_type:'token',scope:CONFIG.GMAIL_SCOPES,prompt:'select_account'});
+  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p;
+}
+function gmailLogout(){
+  gmailToken=null;gmailUser=null;gmailMessages=[];
+  updateGmailUI(false);showToast('Gmail desconectado');
+}
+function parseGmailCallback(){
+  const hash=window.location.hash.substring(1);
+  const params=new URLSearchParams(hash);
+  const token=params.get('access_token');
+  if(token){gmailToken=token;history.replaceState(null,'',window.location.pathname);updateGmailUI(true);fetchGmailUser();fetchGmailInbox();setTimeout(fetchGoogleCalendar,3000);}
+}
+async function fetchGmailUser(){
+  try{const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+gmailToken}});const d=await r.json();gmailUser=d.email;updateGmailUI(true);}catch(e){}
+}
+async function fetchGmailInbox(){
+  if(!gmailToken){showToast('⚠️ Conecte o Gmail');return;}
+  document.getElementById('emailList').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;"><div class="spinner" style="margin:0 auto 8px;"></div>Carregando...</div>';
+  try{
+    const lr=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=in:inbox',{headers:{Authorization:'Bearer '+gmailToken}});
+    const ld=await lr.json();
+    if(!ld.messages){document.getElementById('emailList').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Caixa vazia</div>';return;}
+    const msgs=await Promise.all(ld.messages.slice(0,15).map(m=>fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+m.id+'?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date',{headers:{Authorization:'Bearer '+gmailToken}}).then(r=>r.json())));
+    gmailMessages=msgs.map(m=>{
+      const h=m.payload.headers;
+      const get=name=>(h.find(x=>x.name===name)||{}).value||'';
+      const from=get('From').replace(/<.*>/,'').trim()||get('From');
+      const email=(get('From').match(/<(.+)>/)||[])[1]||get('From');
+      const unread=m.labelIds&&m.labelIds.includes('UNREAD');
+      const date=new Date(parseInt(m.internalDate));
+      const timeStr=date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return{id:m.id,from,email,subject:get('Subject')||'(sem assunto)',snippet:m.snippet,time:timeStr,unread,threadId:m.threadId};
+    });
+    renderGmailList();
+    const unread=gmailMessages.filter(m=>m.unread).length;
+    const badge=document.getElementById('gmailNavBadge');
+    badge.textContent=unread;badge.style.display=unread>0?'flex':'none';
+    document.getElementById('dashEmailVal').textContent=unread;
+    document.getElementById('dashEmailDetail').textContent=unread+' não lido(s)';
+    document.getElementById('dashEmailCount').textContent=unread;
+    showToast('✅ '+gmailMessages.length+' e-mails carregados');
+  }catch(e){document.getElementById('emailList').innerHTML='<div style="color:var(--red);padding:20px;font-size:13px;">Erro ao carregar. Tente reconectar.</div>';}
+}
+function renderGmailList(){
+  document.getElementById('emailList').innerHTML=gmailMessages.map((m,i)=>`
+    <div class="email-item" onclick="openGmailMessage(${i})">
+      <div class="email-from-row">
+        <span class="email-from" style="${m.unread?'font-weight:500;':''}">${escHtml(m.from.substring(0,26))}</span>
+        <span class="email-time">${m.time}</span>
+      </div>
+      <div class="email-subject" style="${m.unread?'color:var(--cream);':''}">${m.unread?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);margin-right:5px;vertical-align:middle;"></span>':''}${escHtml(m.subject)}</div>
+      <div class="email-snippet">${escHtml(m.snippet.substring(0,70))}</div>
+    </div>
+  `).join('');
+}
+async function openGmailMessage(idx){
+  currentEmailIdx=idx;
+  const m=gmailMessages[idx];
+  gmailMessages[idx].unread=false;renderGmailList();
+  document.getElementById('emailListView').style.display='none';
+  document.getElementById('emailDetailView').style.display='block';
+  document.getElementById('composeView').style.display='none';
+  document.getElementById('evSubject').textContent=m.subject;
+  document.getElementById('evMeta').textContent='De: '+m.from+' · '+m.time;
+  document.getElementById('evBody').textContent='Carregando...';
+  document.getElementById('evReplyBtn').onclick=()=>replyEmail(m.email,m.subject);
+  try{
+    const res=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+m.id+'?format=full',{headers:{Authorization:'Bearer '+gmailToken}});
+    const data=await res.json();
+    const body=extractGmailBody(data.payload);
+    document.getElementById('evBody').textContent=body||m.snippet;
+  }catch(e){document.getElementById('evBody').textContent=m.snippet;}
+  if(gmailToken)fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+m.id+'/modify',{method:'POST',headers:{Authorization:'Bearer '+gmailToken,'Content-Type':'application/json'},body:JSON.stringify({removeLabelIds:['UNREAD']})}).catch(()=>{});
+}
+function extractGmailBody(payload){
+  if(!payload)return'';
+  if(payload.body&&payload.body.data)return atob(payload.body.data.replace(/-/g,'+').replace(/_/g,'/'));
+  if(payload.parts){for(const p of payload.parts){if(p.mimeType==='text/plain'&&p.body&&p.body.data)return atob(p.body.data.replace(/-/g,'+').replace(/_/g,'/'));}for(const p of payload.parts){const r=extractGmailBody(p);if(r)return r;}}
+  return'';
+}
+async function sendGmailReal(){
+  const to=document.getElementById('emailTo').value.trim();
+  const subj=document.getElementById('emailSubject').value.trim();
+  const body=document.getElementById('emailResult').textContent.trim();
+  if(!gmailToken){showToast('⚠️ Conecte o Gmail');return;}
+  if(!to||!body){showToast('⚠️ Preencha destinatário e gere o rascunho');return;}
+  const raw=btoa('To: '+to+'\r\nSubject: '+subj+'\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n'+body).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  try{
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+gmailToken,'Content-Type':'application/json'},body:JSON.stringify({raw})});
+    if(r.ok){showToast('📤 E-mail enviado!');showEmailList();}else showToast('❌ Erro ao enviar');
+  }catch(e){showToast('❌ Erro de rede');}
+}
+function updateGmailUI(connected){
+  const banner=document.getElementById('gmailBanner');
+  const btn=document.getElementById('gmailConnectBtn');
+  const sub=document.getElementById('gmailBannerSub');
+  const refreshBtn=document.getElementById('btnRefresh');
+  const logoutBtn=document.getElementById('btnLogout');
+  const sendBtn=document.getElementById('sendGmailBtn');
+  if(connected){
+    banner.classList.add('connected');btn.textContent='✓ Conectado';btn.disabled=true;btn.style.opacity='.6';
+    sub.textContent=gmailUser?'Conectado como '+gmailUser:'Gmail conectado ✓';
+    refreshBtn.style.display='inline-flex';logoutBtn.style.display='inline-flex';sendBtn.style.display='inline-flex';
+  }else{
+    banner.classList.remove('connected');btn.textContent='Conectar';btn.disabled=false;btn.style.opacity='1';
+    sub.textContent='Toque para conectar';refreshBtn.style.display='none';logoutBtn.style.display='none';sendBtn.style.display='none';
+    document.getElementById('emailList').innerHTML='<div style="text-align:center;color:var(--muted);padding:40px 0;font-size:13px;">Conecte o Gmail para ver seus e-mails</div>';
+    document.getElementById('gmailNavBadge').style.display='none';
+  }
+}
+
+/* Email view helpers */
+function showEmailList(){
+  document.getElementById('emailListView').style.display='block';
+  document.getElementById('emailDetailView').style.display='none';
+  document.getElementById('composeView').style.display='none';
+}
+function showComposeView(){
+  document.getElementById('emailListView').style.display='none';
+  document.getElementById('emailDetailView').style.display='none';
+  document.getElementById('composeView').style.display='block';
+}
+function replyEmail(to,subj){
+  document.getElementById('emailTo').value=to;
+  document.getElementById('emailSubject').value='Re: '+subj.replace(/^Re:\s*/i,'');
+  showComposeView();
+}
+
+// ═══════════════════════════════════
+// EMAIL AI
+// ═══════════════════════════════════
+async function generateEmail(){
+  const prompt=document.getElementById('emailPrompt').value.trim();
+  const to=document.getElementById('emailTo').value;
+  const subj=document.getElementById('emailSubject').value;
+  if(!prompt){showToast('⚠️ Descreva o que quer dizer');return;}
+  const load=document.getElementById('emailLoading');const res=document.getElementById('emailResult');
+  load.classList.add('show');res.style.display='none';
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'Você é a assistente pessoal de Lis, executiva profissional. Redija e-mails profissionais e cordiais em português brasileiro. Apenas o corpo do e-mail.',messages:[{role:'user',content:'Para: '+(to||'—')+'\nAssunto: '+(subj||'—')+'\nInstruções: '+prompt}]})});
+    const d=await r.json();res.textContent=d.content.map(c=>c.text||'').join('\n');res.style.display='block';
+  }catch(e){res.textContent='Erro ao conectar com a IA.';res.style.display='block';}
+  load.classList.remove('show');
+}
+
+// ═══════════════════════════════════
+// RESUMO
+// ═══════════════════════════════════
+async function generateDailySummary(){
+  const load=document.getElementById('resumoLoading');const content=document.getElementById('resumoContent');
+  load.classList.add('show');
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const todayEvents=events.filter(e=>e.date===todayStr);
+  const pending=reminders.filter(r=>!r.done);
+  const gmailSummary=gmailMessages.length>0?gmailMessages.slice(0,5).map(m=>'- '+m.from+': "'+m.subject+'" '+(m.unread?'(não lido)':'')).join('\n'):'(Gmail não conectado)';
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:'Você é a assistente pessoal de Lis. Escreva um briefing matinal conciso, útil e motivador em português brasileiro.',messages:[{role:'user',content:'Hoje é '+now.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'.\n\nAgenda:\n'+(todayEvents.length?todayEvents.map(e=>'- '+e.time+': '+e.title).join('\n'):'Sem eventos')+'\n\nLembretes:\n'+(pending.length?pending.map(r=>'- ['+r.priority+'] '+r.text).join('\n'):'Nenhum')+'\n\nGmail:\n'+gmailSummary+'\n\nCrie um briefing matinal personalizado.'}]})});
+    const d=await r.json();
+    const txt=d.content.map(c=>c.text||'').join('\n');
+    content.innerHTML=txt.split('\n').filter(l=>l.trim()).map(l=>'<p style="margin-bottom:10px;">'+l+'</p>').join('');
+  }catch(e){content.innerHTML='<p>Erro ao gerar resumo.</p>';}
+  load.classList.remove('show');
+}
+
+// ═══════════════════════════════════
+// WHATSAPP
+// ═══════════════════════════════════
+function saveWAConfig(){
+  waConfig.phoneId=document.getElementById('waPhoneId').value.trim();
+  waConfig.token=document.getElementById('waToken').value.trim();
+  waConfig.testTo=document.getElementById('waTestTo').value.trim();
+  if(!waConfig.phoneId||!waConfig.token){showToast('⚠️ Preencha Phone Number ID e Token');return;}
+  showToast('✅ WhatsApp configurado!');
+}
+function renderWAContacts(){
+  document.getElementById('waContacts').innerHTML=waContactsData.map(c=>`
+    <div class="wa-contact ${activeContact===c.id?'active':''}" onclick="openWA(${c.id})">
+      <div class="wa-avatar">${c.avatar}</div>
+      <div class="wa-info">
+        <div class="wa-name">${c.name}</div>
+        <div class="wa-preview">${c.msgs[c.msgs.length-1]?.text||''}</div>
+      </div>
+      <div class="wa-time">${c.time}</div>
+    </div>
+  `).join('');
+}
+function openWA(id){
+  activeContact=id;
+  const c=waContactsData.find(x=>x.id===id);
+  document.getElementById('waChatName').textContent=c.name;
+  document.getElementById('waChatStatus').textContent=c.status?'● online':'';
+  document.getElementById('waChatAvatar').textContent=c.avatar;
+  renderWAMessages(c);
+  document.getElementById('waSuggest').style.display='none';
+  showWAChat();
+}
+function renderWAMessages(c){
+  document.getElementById('waMessages').innerHTML=c.msgs.map(m=>`
+    <div class="msg ${m.from}">${m.text}<div class="msg-time">${m.time}</div></div>
+  `).join('');
+  const msgs=document.getElementById('waMessages');
+  setTimeout(()=>msgs.scrollTop=msgs.scrollHeight,50);
+}
+async function sendWA(){
+  const input=document.getElementById('waInput');
+  const txt=input.value.trim();if(!txt||!activeContact)return;
+  const c=waContactsData.find(x=>x.id===activeContact);
+  const time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  c.msgs.push({text:txt,from:'sent',time});
+  if(waConfig.token&&waConfig.phoneId&&waConfig.testTo){
+    try{await fetch('https://graph.facebook.com/v18.0/'+waConfig.phoneId+'/messages',{method:'POST',headers:{Authorization:'Bearer '+waConfig.token,'Content-Type':'application/json'},body:JSON.stringify({messaging_product:'whatsapp',to:waConfig.testTo,type:'text',text:{body:txt}})});showToast('📱 Enviado!');}catch(e){showToast('⚠️ Salvo localmente');}
+  }
+  input.value='';input.style.height='auto';renderWAMessages(c);
+}
+async function suggestWAReply(){
+  if(!activeContact){showToast('⚠️ Selecione uma conversa');return;}
+  const c=waContactsData.find(x=>x.id===activeContact);
+  const lastMsgs=c.msgs.slice(-4).map(m=>(m.from==='received'?c.name:'Lis')+': '+m.text).join('\n');
+  const box=document.getElementById('waSuggest');const result=document.getElementById('waSuggestResult');
+  box.style.display='block';result.textContent='Gerando...';
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:'Você é a assistente pessoal de Lis. Sugira uma resposta concisa para WhatsApp em português. Apenas a resposta.',messages:[{role:'user',content:'Conversa:\n'+lastMsgs+'\n\nSugira uma resposta para Lis.'}]})});
+    const d=await r.json();result.textContent=d.content.map(c=>c.text||'').join('');
+  }catch(e){result.textContent='Erro ao gerar sugestão.';}
+}
+function useWASuggestion(){
+  document.getElementById('waInput').value=document.getElementById('waSuggestResult').textContent;
+  document.getElementById('waSuggest').style.display='none';
+}
+function showWAList(){
+  document.getElementById('waListView').style.display='block';
+  document.getElementById('waChatView').style.display='none';
+  renderWAContacts();
+}
+function showWAChat(){
+  document.getElementById('waListView').style.display='none';
+  document.getElementById('waChatView').style.display='block';
+}
+
+// ═══════════════════════════════════
+// ═══════════════════════════════════
+// GOOGLE CALENDAR
+// ═══════════════════════════════════
+async function fetchGoogleCalendar(){
+  if(!gmailToken){showToast("⚠️ Conecte o Gmail primeiro");return;}
+  try{
+    const now=new Date();
+    const timeMin=encodeURIComponent(now.toISOString());
+    const timeMax=encodeURIComponent(new Date(now.getTime()+7*24*60*60*1000).toISOString());
+    const r=await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin="+timeMin+"&timeMax="+timeMax+"&singleEvents=true&orderBy=startTime&maxResults=30",{headers:{Authorization:"Bearer "+gmailToken}});
+    const d=await r.json();
+    if(!d.items||d.items.length===0){showToast("Nenhum evento nos próximos 7 dias");return;}
+    let added=0;
+    d.items.forEach(ev=>{
+      const start=ev.start.dateTime||ev.start.date;
+      const date=start.slice(0,10);
+      const time=ev.start.dateTime?new Date(ev.start.dateTime).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"Dia todo";
+      const exists=events.find(e=>e.title===ev.summary&&e.date===date);
+      if(!exists){events.push({id:"gcal-"+ev.id,title:ev.summary||"Sem título",date,time,local:ev.location||ev.hangoutLink||"—",tag:"work",color:"#4285f4",fromCalendar:true});added++;}
+    });
+    buildWeekStrip();renderEvents();buildMiniCal();
+    showToast("📅 "+added+" eventos do Calendar importados!");
+    scheduleNotifications();
+  }catch(e){showToast("Erro ao carregar Calendar");console.error(e);}
+}
+
+function scheduleNotifications(){
+  if(!("Notification" in window))return;
+  Notification.requestPermission().then(perm=>{
+    if(perm!=="granted")return;
+    const now=new Date();
+    events.forEach(ev=>{
+      if(!ev.date||!ev.time||ev.time==="Dia todo")return;
+      const evDate=new Date(ev.date+"T"+ev.time);
+      const diff=evDate.getTime()-now.getTime();
+      const notify15=diff-15*60*1000;
+      if(notify15>0&&notify15<24*60*60*1000){
+        setTimeout(()=>{new Notification("📅 Assistente Lis",{body:"Em 15 min: "+ev.title+" às "+ev.time});},notify15);
+      }
+    });
+  });
+}
+
+function requestNotificationPermission(){
+  if(!("Notification" in window)){showToast("⚠️ Notificações não suportadas");return;}
+  Notification.requestPermission().then(perm=>{
+    if(perm==="granted"){showToast("🔔 Notificações ativadas!");scheduleNotifications();}
+    else showToast("⚠️ Permissão de notificação negada");
+  });
+}
+
+// ═══════════════════════════════════
+// ANÁLISE DE RELATÓRIOS
+// ═══════════════════════════════════
+let currentFile=null, currentFileData=null, currentAnalysisType='resumo';
+
+const fileIcons={pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',csv:'📗',txt:'📄',png:'🖼️',jpg:'🖼️',jpeg:'🖼️'};
+
+const analysisPrompts={
+  resumo:'Faça um resumo executivo claro e objetivo deste documento. Destaque os pontos mais importantes em tópicos com emojis.',
+  financeiro:'Analise os dados financeiros deste documento. Identifique receitas, despesas, lucros, tendências e alertas importantes.',
+  riscos:'Identifique os principais riscos e oportunidades presentes neste documento. Seja específico e prático.',
+  acoes:'Com base neste documento, crie um plano de ações com próximos passos concretos e priorizados.',
+  completo:'Análise completa incluindo: 1) Resumo executivo 2) Dados financeiros relevantes 3) Riscos e oportunidades 4) Plano de ações.'
+};
+
+const analysisLabels={
+  resumo:'Resumo Executivo',financeiro:'Análise Financeira',
+  riscos:'Riscos e Oportunidades',acoes:'Plano de Ações',completo:'Análise Completa'
+};
+
+function selectAnalysis(type){
+  currentAnalysisType=type;
+  document.querySelectorAll('.analysis-opt').forEach(el=>{
+    el.classList.remove('active');
+    el.querySelector('.opt-check').style.opacity='0';
+  });
+  const el=document.getElementById('opt-'+type);
+  if(el){el.classList.add('active');el.querySelector('.opt-check').style.opacity='1';}
+}
+
+function handleFileSelect(event){
+  const file=event.target.files[0];
+  if(file) loadFile(file);
+}
+
+function handleDrop(event){
+  event.preventDefault();
+  document.getElementById('uploadArea').style.borderColor='var(--border)';
+  const file=event.dataTransfer.files[0];
+  if(file) loadFile(file);
+}
+
+function loadFile(file){
+  currentFile=file;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const icon=fileIcons[ext]||'📄';
+  const size=file.size<1024*1024?(file.size/1024).toFixed(1)+' KB':(file.size/1024/1024).toFixed(1)+' MB';
+  document.getElementById('fileIcon').textContent=icon;
+  document.getElementById('fileName').textContent=file.name;
+  document.getElementById('fileSize').textContent=size+' · '+ext.toUpperCase();
+  document.getElementById('fileSelected').style.display='block';
+  document.getElementById('analysisOptions').style.display='block';
+  document.getElementById('analysisResult').style.display='none';
+  document.getElementById('uploadArea').style.display='none';
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('analyzeBtn').textContent='⏳ Carregando arquivo...';
+  currentFileData=null;
+
+  const reader=new FileReader();
+
+  if(['png','jpg','jpeg'].includes(ext)){
+    // Imagem — lê como base64
+    reader.onload=e=>{currentFileData={type:'image',data:e.target.result,ext};fileReady();};
+    reader.readAsDataURL(file);
+
+  } else if(['xlsx','xls'].includes(ext)){
+    // Excel — usa SheetJS para converter em texto
+    if(typeof XLSX === 'undefined'){
+      showToast('❌ Biblioteca Excel não carregada. Tente recarregar a página.');
+      clearFile();
+      return;
+    }
+    reader.onload=e=>{
+      try{
+        const data=new Uint8Array(e.target.result);
+        const workbook=XLSX.read(data,{type:'array'});
+        let text='';
+        workbook.SheetNames.forEach(sheetName=>{
+          const sheet=workbook.Sheets[sheetName];
+          const csv=XLSX.utils.sheet_to_csv(sheet);
+          text+='=== Aba: '+sheetName+' ===\n'+csv+'\n\n';
+        });
+        currentFileData={type:'text',data:text};
+        showToast('✅ Planilha carregada: '+workbook.SheetNames.length+' aba(s)');
+        fileReady();
+      }catch(err){
+        showToast('❌ Erro ao ler planilha');
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+  } else if(ext==='csv'){
+    // CSV — lê como texto direto
+    reader.onload=e=>{currentFileData={type:'text',data:e.target.result};fileReady();};
+    reader.readAsText(file,'UTF-8');
+
+  } else if(['pdf'].includes(ext)){
+    // PDF — lê como texto (melhor esforço)
+    reader.onload=e=>{
+      currentFileData={type:'pdf',data:e.target.result};
+      showToast('📕 PDF carregado!');
+      fileReady();
+    };
+    reader.readAsDataURL(file);
+
+  } else {
+    // TXT, DOC, DOCX e outros — tenta ler como texto
+    reader.onload=e=>{currentFileData={type:'text',data:e.target.result};fileReady();};
+    reader.readAsText(file,'UTF-8');
+  }
+}
+
+function fileReady(){
+  const btn=document.getElementById('analyzeBtn');
+  btn.disabled=false;
+  btn.textContent='✦ Analisar com IA';
+  showToast('✅ Arquivo pronto para análise!');
+}
+
+async function analyzeFile(){
+  if(!currentFile||!currentFileData){showToast('⚠️ Selecione um arquivo');return;}
+  const extra=document.getElementById('analysisExtra').value.trim();
+  const prompt=analysisPrompts[currentAnalysisType]+(extra?'\n\nInstrução adicional: '+extra:'');
+  const load=document.getElementById('analysisLoading');
+  load.classList.add('show');
+  document.getElementById('analysisResult').style.display='none';
+  try{
+    let messages;
+    if(currentFileData.type==='image'){
+      const base64=currentFileData.data.split(',')[1];
+      const mediaType=currentFile.type||'image/jpeg';
+      messages=[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+        {type:'text',text:prompt}
+      ]}];
+    } else if(currentFileData.type==='pdf'){
+      const base64=currentFileData.data.split(',')[1];
+      messages=[{role:'user',content:[
+        {type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},
+        {type:'text',text:prompt}
+      ]}];
+    } else {
+      const fileContent=currentFileData.data.substring(0,60000);
+      messages=[{role:'user',content:'Arquivo: '+currentFile.name+'\n\n'+fileContent+'\n\n---\n'+prompt}];
+    }
+    const r=await fetch('/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        system:'Você é a assistente pessoal de Lis, especializada em análise de documentos empresariais. Responda em português brasileiro com linguagem profissional, clara e objetiva. Use emojis e formatação para facilitar a leitura.',
+        messages
+      })
+    });
+    const d=await r.json();
+    if(d.error){throw new Error('API: '+d.error.message);}
+    if(!d.content||!d.content.length){throw new Error('Resposta vazia da IA');}
+    const result=d.content.map(c=>c.text||'').join('\n');
+    document.getElementById('resultBadge').textContent='✦ '+analysisLabels[currentAnalysisType];
+    document.getElementById('resultFileName').textContent='📄 '+currentFile.name;
+    document.getElementById('resultContent').textContent=result;
+    document.getElementById('analysisResult').style.display='block';
+    document.getElementById('analysisOptions').style.display='none';
+    document.getElementById('mainScroll').scrollTop=99999;
+  } catch(e){
+    console.error('Erro análise:', e);
+    let msg='❌ Erro: '+e.message;
+    // Tentar mostrar erro da API
+    try{
+      const errTxt=await e.response?.text();
+      if(errTxt) console.error('API error:',errTxt);
+    }catch(_){}
+    document.getElementById('resultBadge').textContent='❌ Erro';
+    document.getElementById('resultFileName').textContent='';
+    document.getElementById('resultContent').textContent='Erro ao analisar:\n'+e.message+'\n\nVerifique:\n• O arquivo não está corrompido\n• O arquivo tem conteúdo legível\n• Tente um arquivo menor';
+    document.getElementById('analysisResult').style.display='block';
+    document.getElementById('analysisOptions').style.display='none';
+    showToast('❌ '+e.message.substring(0,50));
+  }
+  load.classList.remove('show');
+}
+
+function clearFile(){
+  currentFile=null;currentFileData=null;
+  document.getElementById('fileSelected').style.display='none';
+  document.getElementById('analysisOptions').style.display='none';
+  document.getElementById('analysisResult').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+  document.getElementById('fileInput').value='';
+  const btn=document.getElementById('analyzeBtn');
+  if(btn){btn.disabled=true;btn.textContent='✦ Analisar com IA';}
+}
+
+function clearAnalysis(){
+  document.getElementById('analysisResult').style.display='none';
+  document.getElementById('analysisOptions').style.display='block';
+}
+
+function copyAnalysis(){
+  const text=document.getElementById('resultContent').textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('📋 Copiado!')).catch(()=>showToast('⚠️ Erro ao copiar'));
+}
+
+function emailAnalysis(){
+  const result=document.getElementById('resultContent').textContent;
+  document.getElementById('emailTo').value='';
+  document.getElementById('emailSubject').value='Análise: '+(currentFile?currentFile.name:'Relatório');
+  document.getElementById('emailResult').textContent=result;
+  document.getElementById('emailResult').style.display='block';
+  navTo('emails');showComposeView();
+  showToast('✉️ Pronto para envio!');
+}
+
+
+// QUICK AI
+// ═══════════════════════════════════
+async function runQuickAI(){
+  const prompt=document.getElementById('quickPrompt').value.trim();
+  if(!prompt){showToast('⚠️ Digite uma instrução');return;}
+  const load=document.getElementById('quickLoading');const res=document.getElementById('quickResult');
+  load.classList.add('show');res.style.display='none';
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'Você é a assistente pessoal de Lis, executiva profissional. Responda de forma útil e profissional em português brasileiro.',messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();res.textContent=d.content.map(c=>c.text||'').join('\n');res.style.display='block';
+  }catch(e){res.textContent='Erro ao conectar com IA.';res.style.display='block';}
+  load.classList.remove('show');
+}
+
+// ═══════════════════════════════════
+// TOAST + UTILS
+// ═══════════════════════════════════
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+buildWeekStrip();renderEvents();buildMiniCal();
+renderReminders();renderWAContacts();
+parseGmailCallback();
+renderDashCards();
+</script>
+</body>
+</html>
